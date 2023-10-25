@@ -82,8 +82,6 @@ Tink Server will continue to expose a gRPC API. The protobuf will be simplified 
   <img src="images/230728_tinkerbell_workflow_execution/executing-a-workflow.png" />
 </p>
 
-
-
 #### Service protobuf
 
 The Workflow Service exposes 2 APIs, 1 for establishing a command stream and 1 for publishing Workflow execution events. The full protobuf can be found in Appendix A.
@@ -103,11 +101,11 @@ service WorkflowService {
 
 #### Workflow Events
 
-| Event               | Description |
-| ------------------- | ----------- |
-| `ActionStarted`     | The action has begun executing |
-| `ActionSucceeded`   | The action has completed successfully |
-| `ActionFailed`      | The action failed to complete. Appropriate failure reason and message will accompany the event |
+| Event               | Description                                                                                     |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `ActionStarted`     | The action has begun executing                                                                  |
+| `ActionSucceeded`   | The action has completed successfully                                                           |
+| `ActionFailed`      | The action failed to complete. Appropriate failure reason and message will accompany the event  |
 | `WorkflowRejected`  | Tink Agent has explicitly rejected the request to run the Workflow |
 
 ### Cancelling a Workflow
