@@ -70,7 +70,7 @@ Workflows may also be rejected by Tink Agent explicitly for cases such as a doub
 #### Why do we need the Cancelling state?
 
 The Cancelling state separates Workflows we intend to cancel from those that have been cancelled. This allows Tink Server to issue a cancellation instruction to Tink Agent, and for Tink Agent to indicate successful cancellation. The explicitness of this sequence is useful because:
-* Explicit indication that a Running Workflow has stopped and thus Tink Agent is availbale for a subsequent Workflow is important to avoid unintended Workflow rejection (double dispatch).
+* Explicit indication that a Running Workflow has stopped and thus Tink Agent is available for a subsequent Workflow is important to avoid unintended Workflow rejection (double dispatch).
 * It aids in avoiding a double dispatch. Canceled is an end state so the system is at liberty to dispatch a subsequent Workflow even if the previous Workflow is still in the process of cancelling.
 * It makes clear to operators the state of the Workflow and why Tink Agent isn't executing a subsequent Workflow.
 
