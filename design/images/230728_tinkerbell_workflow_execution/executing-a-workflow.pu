@@ -4,7 +4,7 @@ actor "Operator" as operator
 participant "Tink Agent" as agent
 participant "Tink Server" as server
 entity "Workflow" as workflow
-participant "Tink Controller" as controller
+control "Tink Controller" as controller
 
 operator -> workflow : Create
 controller -> workflow : Prepare

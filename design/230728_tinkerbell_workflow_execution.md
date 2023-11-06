@@ -70,13 +70,12 @@ Workflows may also be rejected by Tink Agent explicitly for cases such as a doub
 #### Why do we need the Cancelling state?
 
 The Cancelling state separates Workflows we intend to cancel from those that have been cancelled. This allows Tink Server to issue a cancellation instruction to Tink Agent, and for Tink Agent to indicate successful cancellation. The explicitness of this sequence is useful because:
-* Explicit indication that a Running Workflow has stopped and thus Tink Agent is available for a subsequent Workflow is important to avoid unintended Workflow rejection (double dispatch).
-* It aids in avoiding a double dispatch. Canceled is an end state so the system is at liberty to dispatch a subsequent Workflow even if the previous Workflow is still in the process of cancelling.
+* It provides explicit indication that a Running Workflow has stopped making it clear that Tink Agent is available to run a subsequent Workflow.
 * It makes clear to operators the state of the Workflow and why Tink Agent isn't executing a subsequent Workflow.
 
 ### Executing Workflows
 
-Tink Server will continue to expose a gRPC API. The protobuf will be simplified to remove superfluous APIs and data structures. Tink Agent will connect to Tink Server to create a command stream. When Tink Server identifies a runnable Workflow for a connected Tink Agent it will dispatch the Workflow on the command stream. Workflows are dispatched in the order they are created. As Tink Agent executes Workflow Actions it will publish events to Tink Server.
+Tink Server will continue to expose a gRPC API. The protobuf will be simplified to remove superfluous APIs and data structures. Tink Agent will connect to Tink Server to create a long lived command stream. When Tink Server identifies a runnable Workflow for a connected Tink Agent it will dispatch the Workflow on the command stream. Workflows are dispatched in the order they are created. As Tink Agent executes Workflow Actions it will publish events to Tink Server.
 
 <p align="center">
   <img src="images/230728_tinkerbell_workflow_execution/executing-a-workflow.png" />
@@ -110,15 +109,17 @@ service WorkflowService {
 
 ### Cancelling a Workflow
 
-Users cancel Workflows by deleting them. If a user wants a Workflow to persist after deletion it is their responsibility to populate a [Kubernetes finalizer](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/) to ensure it isn't garbage collected.
+Users cancel Workflows by deleting them. In response to the delete request, Tink Controller will update the Workflow to a Cancelling state. Tink Server will watch for Workflows in a Cancelling state. When Tink Server receives an update for an executing Workflow indicating its Cancelling, it will dispatch a cancel command to Tink Agent. 
 
-Tink Server will need an opportunity to dispatch a cancellation command for any Workflows its instructed Tink Agent to run. When Tink Controller prepares Workflows it will populate a finalizer preventing the Workflow from being garbage collected. Tink Controller will remove the finalizer either when the Workflow transitions to an end state. 
+To prevent a Workflow from being garbage collected Tink Controller will populate a [finalizer](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/) when it performs the initial preparation of the Workflow. Tink Controller will remove the finalizer when the Workflow transitions to an end state.
 
 <p align="center">
   <img src="images/230728_tinkerbell_workflow_execution/cancelling-workflow.png" />
 </p>
 
 If the Workflow stays in a Cancelling state for too long (for example due to a Tink Agent crash) Tink Controller will force the Workflow into a Canceled state and populate a failure Reason and Message so the user is still aware an issue occurred.
+
+If a user wants a Workflow to persist after deletion it is their responsibility to populate a [finalizer](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/) to ensure it isn't garbage collected.
 
 ### Handling a rejected Workflow
 
@@ -142,7 +143,7 @@ When Tink Agents connect to Tink Server they will present uniquely identifying i
 
 Tink Server is responsible for controlling the flow of Workflows to Tink Agent. If Tink Server didn't have a record for an executing Workflow, or if an executing Workflows state was misrepresented on the Workflow resource, Tink Server may perform a double Workflow dispatch.
 
-If Tink Worker receives a second Workflow while currently executing a Workflow it will dispatch a Workflow rejection event.
+If Tink Worker receives a second Workflow while currently executing a Workflow it will dispatch a Workflow rejection event for the second Workflow.
 
 On receiving the Workflow rejection event Tink Server will transition the Workflow to a Pending state. The Workflow will not be scheduled again until a configurable period has elapsed.
 
