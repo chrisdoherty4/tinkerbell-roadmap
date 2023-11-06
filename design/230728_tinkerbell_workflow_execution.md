@@ -110,13 +110,15 @@ service WorkflowService {
 
 ### Cancelling a Workflow
 
-Operators can cancel Workflows by deleting the Workflow or setting the status to Cancelling.
+Users cancel Workflows by deleting them. If a user wants a Workflow to persist after deletion it is their responsibility to populate a [Kubernetes finalizer](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/) to ensure it isn't garbage collected.
 
-When Kubernetes resources are deleted they are removed from the system via a garbage collection process. Resources that specify [finalizers](https://kubernetes.io/docs/concepts/overview/working-with-objects/finalizers/) are are not garbage collected until all finalizers are removed.
+Tink Server will need an opportunity to dispatch a cancellation command for any Workflows its instructed Tink Agent to run. When Tink Controller prepares Workflows it will populate a finalizer preventing the Workflow from being garbage collected. Tink Controller will remove the finalizer either when the Workflow transitions to an end state. 
 
-Tink Controller will populate a finalizer when it prepares a Workflow. The finalizer will remain on the object until it transitions to an end state.
+<p align="center">
+  <img src="images/230728_tinkerbell_workflow_execution/cancelling-workflow.png" />
+</p>
 
-When a Workflow is deleted, Tink Controller will transition the Workflow to either Canceled (if the Workflow is in a Pending state) or Cancelling (if the Workflow is Scheduled or Running).
+If the Workflow stays in a Cancelling state for too long (for example due to a Tink Agent crash) Tink Controller will force the Workflow into a Canceled state and populate a failure Reason and Message so the user is still aware an issue occurred.
 
 ### Handling a rejected Workflow
 
