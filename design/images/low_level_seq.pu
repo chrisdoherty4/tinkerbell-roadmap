@@ -1,0 +1,40 @@
+@startuml
+
+
+box "Tink Agent"
+participant gRPCClient as client
+end box
+
+box "Tink Server"
+participant gRPCServer as server
+participant Agent as agent
+participant WorkflowDispatcher as dispatcher
+end box
+
+box Kubernetes
+collections Workflow as workflow
+end box
+
+client -> server : Connect()
+
+server -> agent : New(CmdStream)
+server <-- agent : Agent
+server -> dispatcher : Handle(Agent)
+dispatcher -> workflow : AwaitNext()
+dispatcher <-- workflow : Workflow
+dispatcher -> agent : RunWorkflow(Workflow)
+agent -> client : Dispatch(CmdStream, Workflow)
+dispatcher -> workflow : Watch(Workflow, Filter, ExitCond, Callback)
+
+== Workflow Deleted ==
+workflow --// dispatcher : Change event
+dispatcher -> agent : CancelWorkflow(Workflow)
+agent -> client : Cancel(CmdStream, Workflow)
+
+== Workflow Finished ==
+
+workflow --// dispatcher : Change event
+dispatcher -> workflow : AwaitNext() ...
+
+
+@enduml

@@ -1,0 +1,16 @@
+@startuml
+
+struct "Workflow" as workflow
+
+struct "GRPC Server" as server
+struct "Dispatcher" as dispatcher
+dispatcher : Handle(Agent) error
+
+interface "Agent" as agent
+agent : SendWorkflow()
+agent : CancelWorkflow()
+
+struct "WorkflowMonitor" as monitor
+monitor : Monitor(Worflow)
+
+@enduml
